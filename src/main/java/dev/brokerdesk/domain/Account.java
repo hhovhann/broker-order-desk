@@ -14,6 +14,7 @@ public class Account {
     @Column(name = "margin_limit_mills") private long marginLimitMills;
     @Column(name = "reserved_mills") private long reservedMills;
     @Version private long version;
+    @Column(name = "liquidity_provider") private boolean liquidityProvider;
 
     protected Account() {}
     public Account(String owner, long cashMills, long marginLimitMills) {
@@ -21,6 +22,8 @@ public class Account {
     }
 
     public Long getId() { return id; }
+    public boolean isLiquidityProvider() { return liquidityProvider; }
+    public Account asLiquidityProvider() { this.liquidityProvider = true; return this; }
     public String getOwner() { return owner; }
     public long getCashMills() { return cashMills; }
     public long getMarginLimitMills() { return marginLimitMills; }

@@ -18,9 +18,11 @@ public class SettlementService {
     private final TradeRepository trades;
     private final InstrumentRepository instruments;
     private final AuditService audit;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public SettlementService(OrderRepository orders, AccountRepository accounts, HoldingRepository holdings, TradeRepository trades,
-                             InstrumentRepository instruments, AuditService audit) {
+                             InstrumentRepository instruments, AuditService audit, org.springframework.context.ApplicationEventPublisher events) {
+        this.events = events;
         this.orders = orders; this.accounts = accounts; this.holdings = holdings; this.trades = trades; this.instruments = instruments; this.audit = audit;
     }
 
@@ -49,6 +51,7 @@ public class SettlementService {
 
             trades.save(new Trade(taker.getSymbol(), f.priceMills(), f.quantity(), buy.getId(), sell.getId(), buyer.getId(), seller.getId()));
             instrument.traded(f.priceMills());
+            events.publishEvent(new TradeExecuted(taker.getSymbol(), f.priceMills(), f.quantity()));
             audit.record("FILL", taker.getSymbol() + " " + f.quantity() + " @ " + f.priceMills() + " buy#" + buy.getId() + " sell#" + sell.getId());
         }
         if (match.cancelledQty() > 0) {   // self-trade prevention removed the remainder

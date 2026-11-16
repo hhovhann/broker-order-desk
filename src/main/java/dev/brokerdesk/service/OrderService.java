@@ -31,8 +31,10 @@ public class OrderService {
     private final MatchingEngine engine;
     private final AuditService audit;
     private final TransactionTemplate tx;
+    private final StreamHub hub;
 
-    public OrderService(OrderRepository orders, InstrumentRepository instruments, RiskService risk, MatchingEngine engine, AuditService audit, PlatformTransactionManager tm) {
+    public OrderService(OrderRepository orders, InstrumentRepository instruments, RiskService risk, MatchingEngine engine, AuditService audit, PlatformTransactionManager tm, StreamHub hub) {
+        this.hub = hub;
         this.orders = orders; this.instruments = instruments; this.risk = risk; this.engine = engine; this.audit = audit; this.tx = new TransactionTemplate(tm);
     }
 
@@ -49,12 +51,12 @@ public class OrderService {
             return CompletableFuture.completedFuture(OrderView.of(winner));
         }
         BrokerOrder order = acc.order();
-        if (!acc.fresh() || order.getStatus() != OrderStatus.NEW) return CompletableFuture.completedFuture(OrderView.of(order));
+        if (!acc.fresh() || order.getStatus() != OrderStatus.NEW) { if (acc.fresh()) hub.broadcast("market", c.symbol()); return CompletableFuture.completedFuture(OrderView.of(order)); }
 
         long id = order.getId();
         return engine.place(c.symbol(), new MatchingEngine.Ticket(id, accountId, c.side(), c.limitPriceMills(), c.quantity()))
                 .orTimeout(ENGINE_TIMEOUT.toSeconds(), java.util.concurrent.TimeUnit.SECONDS)
-                .thenApply(v -> OrderView.of(orders.findById(id).orElseThrow()));
+                .thenApply(v -> { hub.broadcast("market", c.symbol()); return OrderView.of(orders.findById(id).orElseThrow()); });
     }
 
     private Accepted accept(long accountId, PlaceCommand c) {
@@ -85,6 +87,7 @@ public class OrderService {
         if (!o.getStatus().isOpen()) throw new ApiException(HttpStatus.CONFLICT, "order is " + o.getStatus() + ", nothing to cancel");
         return engine.cancel(o.getSymbol(), orderId).thenApply(done -> {
             if (!done) throw new ApiException(HttpStatus.CONFLICT, "order is no longer resting");
+            hub.broadcast("market", o.getSymbol());
             return OrderView.of(orders.findById(orderId).orElseThrow());
         });
     }

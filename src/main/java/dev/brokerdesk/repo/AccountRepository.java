@@ -8,6 +8,7 @@ import java.util.*;
 
 public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByOwner(String owner);
+    List<Account> findByLiquidityProviderTrue();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select a from Account a where a.id = :id")

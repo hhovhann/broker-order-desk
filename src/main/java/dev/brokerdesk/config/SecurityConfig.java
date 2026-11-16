@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
                         .requestMatchers("/actuator/health/**", "/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/api/v1/public/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
                 .httpBasic(Customizer.withDefaults())
@@ -41,6 +42,7 @@ public class SecurityConfig {
                 User.withUsername("trader2").password(pw).roles("TRADER").build(),
                 User.withUsername("risk1").password(pw).roles("RISK").build(),
                 User.withUsername("lp1").password(pw).roles("LIQUIDITY_PROVIDER").build(),
+                User.withUsername("lp2").password(pw).roles("LIQUIDITY_PROVIDER").build(),
                 User.withUsername("admin").password(pw).roles("ADMIN").build());
     }
 }
