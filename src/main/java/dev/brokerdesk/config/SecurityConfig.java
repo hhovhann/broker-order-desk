@@ -24,7 +24,7 @@ public class SecurityConfig {
                 .csrf(c -> c.disable())   // stateless, no session cookie to forge
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(a -> a
-                        .requestMatchers("/actuator/health/**", "/", "/index.html", "/favicon.ico").permitAll()
+                        .requestMatchers("/actuator/health/**", "/", "/index.html", "/assets/**", "/favicon.ico").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
                 .httpBasic(Customizer.withDefaults())

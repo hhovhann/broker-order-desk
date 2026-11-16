@@ -21,11 +21,15 @@ public class MarketController {
                            long trades, long averageMills, long shares, long valueMills, long prevCloseMills, long highMills, long lowMills,
                            long changeMills, long changeBps, List<Long> spark) {}
 
+    public record Rules(int bandPercent, int maintenanceMarginPercent, long maxOrderValueMills) {}
+
     private final MatchingEngine engine;
+    private final dev.brokerdesk.config.BrokerProperties props;
     private final TradeRepository trades;
     private final InstrumentRepository instruments;
 
-    public MarketController(MatchingEngine engine, TradeRepository trades, InstrumentRepository instruments) {
+    public MarketController(MatchingEngine engine, TradeRepository trades, InstrumentRepository instruments, dev.brokerdesk.config.BrokerProperties props) {
+        this.props = props;
         this.engine = engine; this.trades = trades; this.instruments = instruments;
     }
 
@@ -33,6 +37,10 @@ public class MarketController {
     List<InstrumentView> instruments() {
         return instruments.findAll().stream().map(i -> new InstrumentView(i.getSymbol(), i.getName(), i.getReferencePriceMills(), i.getLastPriceMills())).toList();
     }
+
+    /** The business limits the pre-trade checks use, so the UI can show them next to the order ticket. The server stays the only enforcer. */
+    @GetMapping("/rules")
+    Rules rules() { return new Rules(props.bandPercent(), props.maintenanceMarginPercent(), props.maxOrderValueMills()); }
 
     @GetMapping("/board")
     List<BoardRow> board() {

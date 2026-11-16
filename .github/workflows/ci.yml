@@ -1,0 +1,30 @@
+name: ci
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '25', cache: maven }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: npm, cache-dependency-path: web/package-lock.json }
+      - name: Build the UI
+        run: cd web && npm ci && npm run build
+      - name: Test (unit, integration, concurrency)
+        run: ./mvnw -B verify
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: surefire-reports, path: target/surefire-reports }
+
+  container:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with: { context: ., push: false, tags: 'broker-order-desk:ci', cache-from: 'type=gha', cache-to: 'type=gha,mode=max' }

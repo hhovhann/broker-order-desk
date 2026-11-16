@@ -1,0 +1,53 @@
+# One active replica on purpose: each symbol's order book lives in ONE process (single writer). See docs/ARCHITECTURE.md.
+# Recreate (not RollingUpdate) so two engines are never active at once during a rollout. Scale out by sharding symbols across deployments.
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: broker-order-desk }
+data:
+  BROKER_BAND_PERCENT: "10"
+  BROKER_MAINTENANCE_MARGIN_PERCENT: "35"
+---
+apiVersion: v1
+kind: Secret
+metadata: { name: broker-order-desk-db }
+type: Opaque
+stringData:                      # placeholder values: real clusters inject these from the bank's secret manager
+  DB_URL: jdbc:postgresql://postgres:5432/broker
+  DB_USER: broker
+  DB_PASSWORD: change-me
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: broker-order-desk, labels: { app: broker-order-desk } }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: broker-order-desk } }
+  template:
+    metadata: { labels: { app: broker-order-desk } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001, seccompProfile: { type: RuntimeDefault } }
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: app
+          image: broker-order-desk:0.1.0
+          ports: [{ containerPort: 8080, name: http }]
+          envFrom:
+            - configMapRef: { name: broker-order-desk }
+            - secretRef: { name: broker-order-desk-db }
+          resources:
+            requests: { cpu: 250m, memory: 512Mi }
+            limits: { memory: 1Gi }
+          securityContext: { allowPrivilegeEscalation: false, readOnlyRootFilesystem: true, capabilities: { drop: ["ALL"] } }
+          volumeMounts: [{ name: tmp, mountPath: /tmp }]
+          startupProbe: { httpGet: { path: /actuator/health/liveness, port: http }, failureThreshold: 30, periodSeconds: 2 }
+          livenessProbe: { httpGet: { path: /actuator/health/liveness, port: http }, periodSeconds: 10 }
+          readinessProbe: { httpGet: { path: /actuator/health/readiness, port: http }, periodSeconds: 5 }
+      volumes: [{ name: tmp, emptyDir: {} }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: broker-order-desk }
+spec:
+  selector: { app: broker-order-desk }
+  ports: [{ name: http, port: 80, targetPort: http }]
