@@ -1,0 +1,12 @@
+target/
+data/
+.idea/
+*.iml
+node_modules/
+web/dist/
+# built frontend (Vite writes it here; the Dockerfile and CI build it)
+src/main/resources/static/index.html
+src/main/resources/static/assets/
+demo/.work/
+demo/.venv/
+demo/out/*.wav

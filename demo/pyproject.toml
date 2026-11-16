@@ -1,0 +1,12 @@
+[project]
+name = "broker-order-desk-demo"
+version = "0.1.0"
+description = "Narrated demo video of the Broker Order Desk (local Kokoro voice, Playwright, ffmpeg)"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx==0.28.1",
+    "playwright==1.64.0",
+    "kokoro-onnx==0.6.1",
+    "soundfile==0.14.0",
+    "numpy==2.5.4",
+]
