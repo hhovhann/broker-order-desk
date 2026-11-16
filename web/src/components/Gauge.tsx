@@ -3,7 +3,7 @@ export function Gauge({ valueBps, maintenanceBps, max = 10000 }: { valueBps: num
   const clamp = (v: number) => Math.max(0, Math.min(max, v))
   const ang = (v: number) => Math.PI * (1 - clamp(v) / max)
   const pt = (v: number, r: number) => [100 + r * Math.cos(ang(v)), 100 - r * Math.sin(ang(v))]
-  const arc = (from: number, to: number, r: number) => { const a = pt(from, r), b = pt(to, r); return `M${a[0]},${a[1]} A${r},${r} 0 ${to - from > max / 2 ? 1 : 0} 1 ${b[0]},${b[1]}` }
+  const arc = (from: number, to: number, r: number) => { const a = pt(from, r), b = pt(to, r); return `M${a[0]},${a[1]} A${r},${r} 0 0 1 ${b[0]},${b[1]}` }
   const needle = pt(valueBps, 62), mark = [pt(maintenanceBps, 52), pt(maintenanceBps, 84)]
   const call = valueBps < maintenanceBps
   return (

@@ -1,0 +1,124 @@
+1
+00:00:00,654 --> 00:00:07,285
+This is Broker Order Desk: an order desk for a stock brokerage,
+with a React dashboard on a Spring Boot backend, written in Java
+
+2
+00:00:07,285 --> 00:00:13,916
+twenty five. There are four roles: investor, liquidity provider,
+risk officer, and administrator. Every name, symbol and price is
+
+3
+00:00:13,916 --> 00:00:17,231
+synthetic.
+
+4
+00:00:18,677 --> 00:00:26,080
+Investor two signs in and lands on the price board: best offer
+and bid from the live order book, last price, trades, average,
+
+5
+00:00:26,080 --> 00:00:33,482
+volume, value, high, low, a trend line, and the change. Ten
+symbols carry synthetic opening trades.
+
+6
+00:00:34,086 --> 00:00:40,450
+Investor two sells twenty thousand shares at twelve riyals and
+five hundred mills. Pre trade risk reserves those shares, so
+
+7
+00:00:40,450 --> 00:00:46,813
+they cannot be sold twice, and the order rests in the book. The
+depth panel shows it.
+
+8
+00:00:49,144 --> 00:00:56,952
+Investor one buys the same size. The engine matches by price and
+time, and the trade settles in one database transaction. At the
+
+9
+00:00:56,952 --> 00:01:04,760
+top, the balance turned negative: that is the margin loan. The
+margin check is healthy at forty percent.
+
+10
+00:01:07,090 --> 00:01:12,829
+Now the price moves. Investor two offers five thousand shares at
+eleven riyals three hundred, still inside the ten percent daily
+
+11
+00:01:12,829 --> 00:01:15,699
+band.
+
+12
+00:01:18,021 --> 00:01:24,118
+Investor one buys a thousand at that price. The last price
+drops, the position is marked to market, and equity falls below
+
+13
+00:01:24,118 --> 00:01:30,216
+the maintenance level. The flag at the top turns red: margin
+call.
+
+14
+00:01:30,818 --> 00:01:36,589
+The margin screen shows it on a gauge: the needle is inside the
+red zone, under the maintenance line.
+
+15
+00:01:38,920 --> 00:01:46,108
+A risk officer signs in. Only that role sees margin calls across
+accounts, and investor one is on the list.
+
+16
+00:01:48,439 --> 00:01:56,395
+Back as investor one, three pre trade checks. The ticket warns
+before sending, and the server still decides. A price outside
+
+17
+00:01:56,395 --> 00:02:04,351
+the daily band is rejected. An order bigger than the buying
+power is rejected. Selling shares you do not own is rejected.
+
+18
+00:02:06,669 --> 00:02:14,285
+Investor two cancels the order that is still resting. The engine
+removes it from the book and the reserved shares are released.
+
+19
+00:02:16,587 --> 00:02:22,767
+The liquidity provider posts a two sided quote, a bid and an
+offer together. It goes through the same risk, matching and
+
+20
+00:02:22,767 --> 00:02:25,857
+settlement path as any other order.
+
+21
+00:02:28,169 --> 00:02:34,070
+Finally the administrator reviews the audit trail: every
+accepted order, fill, rejection and cancel, with who did it and
+
+22
+00:02:34,070 --> 00:02:37,020
+a correlation id.
+
+23
+00:02:37,625 --> 00:02:44,139
+Twenty seven automated tests stand behind this, including a
+stress test with many concurrent orders that proves cash and
+
+24
+00:02:44,139 --> 00:02:50,652
+shares are conserved, and a test where the database fails in the
+middle of settlement and the desk recovers. There is a
+
+25
+00:02:50,652 --> 00:02:57,166
+Dockerfile, Kubernetes manifests, a CI pipeline, specs and a
+changelog for every feature, and the code is in the Git
+
+26
+00:02:57,166 --> 00:03:00,423
+repository.

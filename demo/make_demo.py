@@ -24,20 +24,19 @@ CURSOR_JS = """(() => { const add = () => { if (document.getElementById('demo-cu
   document.addEventListener('DOMContentLoaded', add); add(); })();"""
 
 LINES = {
-    "intro": "This is Broker Order Desk: the backend of a brokerage. Java twenty five, Spring Boot three point five, Spring Security, J P A, and a single writer matching engine. The data is synthetic: invented symbols, invented investors.",
-    "sell": "Investor two places a sell order for twenty thousand shares at twelve riyals five hundred. Pre trade risk checks the price band and reserves the shares, so they cannot be sold twice. The order rests in the book, and the depth panel shows it.",
-    "buy": "Investor one buys the same size. The engine matches by price and time priority, and the trade settles in one database transaction. The account is margin financed: the cash balance is now negative, which is the loan, and equity is forty percent of the position, above the thirty five percent maintenance level.",
+    "intro": "This is Broker Order Desk: an order desk for a stock brokerage, with a React dashboard on a Spring Boot backend, written in Java twenty five. There are four roles: investor, liquidity provider, risk officer, and administrator. Every name, symbol and price is synthetic.",
+    "prices": "Investor two signs in and lands on the price board: best offer and bid from the live order book, last price, trades, average, volume, value, high, low, a trend line, and the change. Ten symbols carry synthetic opening trades.",
+    "sell": "Investor two sells twenty thousand shares at twelve riyals and five hundred mills. Pre trade risk reserves those shares, so they cannot be sold twice, and the order rests in the book. The depth panel shows it.",
+    "buy": "Investor one buys the same size. The engine matches by price and time, and the trade settles in one database transaction. At the top, the balance turned negative: that is the margin loan. The margin check is healthy at forty percent.",
     "sell2": "Now the price moves. Investor two offers five thousand shares at eleven riyals three hundred, still inside the ten percent daily band.",
-    "buy2": "Investor one buys a thousand at that price. The last price drops, the position is marked to market, and equity falls under the maintenance level. The account is now in margin call, and the screen says so.",
-    "calls": "A risk officer signs in. Only the risk role can list margin calls, and investor one is on the list.",
-    "forbidden": "Security is enforced on every endpoint. Investor one tries to read investor two's account, and is refused with a four zero three.",
-    "band": "Pre trade risk, case one: a price far outside the daily band is rejected before it can reach the book.",
-    "power": "Case two: an order bigger than cash plus the margin line is rejected for insufficient buying power.",
-    "shares": "Case three: selling shares you do not own is rejected. No short selling.",
-    "replay": "A client retries its first order after a timeout. The client order id makes it idempotent: the same order comes back, and the investor is not charged twice.",
-    "cancel": "Investor two cancels the resting sell. The engine removes it from the book, and the reserved shares are released.",
-    "quote": "Finally the liquidity provider role: one call places a bid and an offer together, through the same risk, matching and settlement path as any other order.",
-    "outro": "Twenty six automated tests stand behind this, including a stress test with many concurrent orders that proves cash and shares are conserved, and a test where the database fails mid settlement and the desk recovers. There is a Dockerfile, Kubernetes manifests, a GitHub Actions pipeline, and the code is in the Git repository.",
+    "buy2": "Investor one buys a thousand at that price. The last price drops, the position is marked to market, and equity falls below the maintenance level. The flag at the top turns red: margin call.",
+    "margin": "The margin screen shows it on a gauge: the needle is inside the red zone, under the maintenance line.",
+    "risk": "A risk officer signs in. Only that role sees margin calls across accounts, and investor one is on the list.",
+    "reject": "Back as investor one, three pre trade checks. The ticket warns before sending, and the server still decides. A price outside the daily band is rejected. An order bigger than the buying power is rejected. Selling shares you do not own is rejected.",
+    "cancel": "Investor two cancels the order that is still resting. The engine removes it from the book and the reserved shares are released.",
+    "quote": "The liquidity provider posts a two sided quote, a bid and an offer together. It goes through the same risk, matching and settlement path as any other order.",
+    "audit": "Finally the administrator reviews the audit trail: every accepted order, fill, rejection and cancel, with who did it and a correlation id.",
+    "outro": "Twenty seven automated tests stand behind this, including a stress test with many concurrent orders that proves cash and shares are conserved, and a test where the database fails in the middle of settlement and the desk recovers. There is a Dockerfile, Kubernetes manifests, a CI pipeline, specs and a changelog for every feature, and the code is in the Git repository.",
 }
 
 
@@ -85,23 +84,74 @@ def expect(pg, sel, text, timeout=15000):
         raise AssertionError(f"narration expects '{text}' in {sel}, screen has: {pg.locator(sel).inner_text()[:300]}")
 
 
+def login_as(pg, user):
+    if pg.locator('[data-testid=signout]').count():
+        tap(pg, '[data-testid=signout]', 0.3)
+    pg.wait_for_selector(f'[data-testid=demo-{user}]')
+    tap(pg, f'[data-testid=demo-{user}]', 0.3)
+    pg.wait_for_selector('[data-testid=who]')
+    expect(pg, '[data-testid=who]', user)
+
+
+def open_symbol_in_trading(pg):
+    tap(pg, '[data-testid=nav-trading]', 0.3)
+    pg.wait_for_selector('[data-testid=ticket]')
+
+
+def order(pg, side, qty, price):
+    tap(pg, f'[data-testid=side-{side}]', 0.2)
+    for sel, val in (('[data-testid=qty]', str(qty)), ('[data-testid=price]', price)):
+        loc = pg.locator(sel); loc.scroll_into_view_if_needed(); loc.fill(val); nap(0.3)
+    tap(pg, '[data-testid=submit-order]', 0.3)
+
+
 def story(pg, rec, clips):
     S = lambda c: say(rec, clips, c)
-    pg.goto(BASE + "/"); pg.wait_for_selector("#sc-sell"); nap(0.6)
+    pg.goto(BASE + "/"); pg.wait_for_selector('[data-testid=login-user]'); nap(0.6)
     e = S("intro"); until(rec, e)
 
-    e = S("sell"); tap(pg, "#sc-sell"); expect(pg, "#response", '"status": "NEW"'); expect(pg, "#depth", "20,000"); until(rec, e)
-    e = S("buy"); tap(pg, "#sc-buy"); expect(pg, "#response", '"status": "FILLED"'); expect(pg, "#st-margin", "40.0%"); until(rec, e)
-    e = S("sell2"); tap(pg, "#sc-sell2"); expect(pg, "#response", '"status": "NEW"'); until(rec, e)
-    e = S("buy2"); tap(pg, "#sc-buy2"); expect(pg, "#response", '"status": "FILLED"'); expect(pg, "#st-margin", "MARGIN CALL"); until(rec, e)
-    e = S("calls"); tap(pg, "#sc-calls"); expect(pg, "#response", "trader1"); expect(pg, "#pane", "trader1"); until(rec, e)
-    e = S("forbidden"); tap(pg, "#sc-forbidden"); expect(pg, "#response", "403"); until(rec, e)
-    e = S("band"); tap(pg, "#sc-band"); expect(pg, "#response", "PRICE_OUTSIDE_BAND"); until(rec, e)
-    e = S("power"); tap(pg, "#sc-power"); expect(pg, "#response", "INSUFFICIENT_BUYING_POWER"); until(rec, e)
-    e = S("shares"); tap(pg, "#sc-shares"); expect(pg, "#response", "INSUFFICIENT_SHARES"); until(rec, e)
-    e = S("replay"); tap(pg, "#sc-replay"); expect(pg, "#response", "b1-"); expect(pg, "#response", '"status": "FILLED"'); until(rec, e)
-    e = S("cancel"); tap(pg, "#sc-cancel"); expect(pg, "#response", "CANCELLED"); until(rec, e)
-    e = S("quote"); tap(pg, "#sc-quote"); expect(pg, "#response", '"bid"'); expect(pg, "#depth", "12.400"); until(rec, e)
+    login_as(pg, "trader2")
+    e = S("prices"); pg.wait_for_selector('[data-testid=row-FNBK]'); expect(pg, '[data-testid=board]', 'Sample Bank'); until(rec, e)
+    e = S("sell"); open_symbol_in_trading(pg); order(pg, 'sell', 20000, '12.500')
+    expect(pg, '.toasts', 'resting in the book'); expect(pg, '[data-testid=depth]', '20,000'); until(rec, e)
+
+    login_as(pg, "trader1")
+    e = S("buy"); open_symbol_in_trading(pg); order(pg, 'buy', 20000, '12.500')
+    expect(pg, '.toasts', 'filled at 12.500'); expect(pg, '[data-testid=margin-flag]', '40.00%'); expect(pg, '[data-testid=strip-balance]', '-150,000.00'); until(rec, e)
+
+    login_as(pg, "trader2")
+    e = S("sell2"); open_symbol_in_trading(pg); order(pg, 'sell', 5000, '11.300'); expect(pg, '.toasts', 'resting in the book'); until(rec, e)
+
+    login_as(pg, "trader1")
+    e = S("buy2"); open_symbol_in_trading(pg); order(pg, 'buy', 1000, '11.300')
+    expect(pg, '.toasts', 'filled at 11.300'); expect(pg, '[data-testid=margin-flag]', 'MARGIN CALL'); until(rec, e)
+    e = S("margin"); tap(pg, '[data-testid=nav-margin]', 0.4); expect(pg, '[data-testid=margin-call]', 'MARGIN CALL'); until(rec, e)
+
+    login_as(pg, "risk1")
+    e = S("risk"); tap(pg, '[data-testid=nav-risk]', 0.4); expect(pg, '[data-testid=calls]', 'trader1'); until(rec, e)
+
+    login_as(pg, "trader1")
+    e = S("reject"); open_symbol_in_trading(pg)
+    order(pg, 'buy', 10, '20.000'); expect(pg, '.hints', 'outside the daily band'); expect(pg, '.toasts', 'daily band')
+    nap(1.0); order(pg, 'buy', 30000, '12.500'); expect(pg, '.toasts', 'buying power')
+    nap(1.0); order(pg, 'sell', 50000, '12.500'); expect(pg, '.toasts', 'Not enough shares'); until(rec, e)
+
+    login_as(pg, "trader2")
+    e = S("cancel"); open_symbol_in_trading(pg)
+    pg.wait_for_selector('[data-testid^=cancel-]'); tap(pg, '[data-testid^=cancel-]', 0.3); expect(pg, '.toasts', 'cancelled'); until(rec, e)
+
+    login_as(pg, "lp1")
+    e = S("quote"); tap(pg, '[data-testid=nav-liquidity]', 0.4)
+    for sel, val in (('[data-testid=q-qty]', '1000'), ('[data-testid=q-bid]', '12.400'), ('[data-testid=q-ask]', '12.600')):
+        pg.locator(sel).fill(val); nap(0.3)
+    tap(pg, '[data-testid=q-submit]', 0.3); expect(pg, '.toasts', 'Quoted SBNK')
+    tap(pg, '[data-testid=nav-trading]', 0.3); expect(pg, '[data-testid=depth]', '12.400'); expect(pg, '[data-testid=depth]', '12.600'); until(rec, e)
+
+    login_as(pg, "admin")
+    e = S("audit"); tap(pg, '[data-testid=nav-audit]', 0.4)
+    for word in ('FILL', 'ORDER_REJECTED', 'CANCEL', 'ORDER_ACCEPTED'):
+        expect(pg, '[data-testid=audit]', word)
+    until(rec, e)
     e = S("outro"); until(rec, e, 1.2)
 
 
@@ -133,16 +183,18 @@ def finish(rec, clips, work, video):
                     "-map", "0:v", "-map", "1:a", "-map", "2:s", "-vf", f"scale={W * 3 // 2}:{H * 3 // 2}:flags=lanczos",
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "22", "-preset", "slow", "-r", "25", "-c:a", "aac", "-b:a", "128k",
                     "-c:s", "mov_text", "-metadata:s:s:0", "language=eng", "-t", f"{total:.2f}", "-movflags", "+faststart", str(mp4)], check=True)
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "50", "-i", str(mp4), "-frames:v", "1", str(OUT / f"{NAME}.png")], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "60", "-i", str(mp4), "-frames:v", "1", str(OUT / f"{NAME}.png")], check=True)
     print("video", mp4, round(total), "s")
 
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    if not (ROOT / "src/main/resources/static/index.html").exists():
+        subprocess.run(["npm", "ci"], cwd=ROOT / "web", check=True); subprocess.run(["npm", "run", "build"], cwd=ROOT / "web", check=True)
     if not JAR.exists(): subprocess.run(["./mvnw", "-q", "-DskipTests", "package"], cwd=ROOT, check=True, env=dict(os.environ, JAVA_HOME=JAVA_HOME))
-    work = pathlib.Path(tempfile.mkdtemp(prefix="cardhub-demo-"))
+    work = pathlib.Path(tempfile.mkdtemp(prefix="brokerdesk-demo-"))
     clips = {k: (None, 4.0, 24000) for k in LINES} if FAST else synth(LINES, work)
-    env = dict(os.environ, SPRING_PROFILES_ACTIVE="demo", CLEARING_INBOX=str(work / "inbox"))
+    env = dict(os.environ, SPRING_PROFILES_ACTIVE="demo")
     srv = subprocess.Popen([f"{JAVA_HOME}/bin/java", "-XX:+UseCompactObjectHeaders", "-jar", str(JAR), f"--server.port={PORT}"], env=env, cwd=work, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     rec = Rec()
     try:
