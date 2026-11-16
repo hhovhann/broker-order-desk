@@ -19,6 +19,6 @@ RUN useradd --system --uid 10001 app
 USER 10001
 WORKDIR /app
 COPY --from=build /app/target/broker-order-desk-0.1.0.jar app.jar
-ENV JAVA_TOOL_OPTIONS="-XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75"
+ENV JAVA_TOOL_OPTIONS="-XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=70"
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -14,9 +14,9 @@ Hello [Loay],
 I have applied for the Senior Java Software Engineer role. Because the role is about order flow, margin and concurrency, I built a small working sample on the same stack rather than only describing my experience:
 
 - Code: https://github.com/hhovhann/broker-order-desk
-- 3-minute narrated demo: [link or attachment]
+- 4-minute narrated demo: [link or attachment]
 
-It has a price-time matching engine (one actor per symbol), pre-trade risk and margin calls, atomic settlement, Spring Security roles with ownership checks, a React dashboard, Docker/Kubernetes/CI, and 27 tests, including a concurrency test that proves cash and shares are conserved. All data is synthetic.
+It has a price-time matching engine (one actor per symbol), pre-trade risk and margin calls, atomic settlement, Spring Security roles with ownership checks, a React dashboard with live updates, charts, analytics, wallet, alerts and Arabic right-to-left, Docker/Kubernetes/CI, and 44 tests, including a concurrency test that proves cash and shares are conserved, and a garbage-collector benchmark behind the runtime choice. All data is synthetic.
 
 My CV is attached. I would be glad to walk you or the engineering team through it. [Notice period / availability.]
 

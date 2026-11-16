@@ -158,5 +158,6 @@ class FeaturesApiTest {
         assertThat(lines).contains("data:SBNK");
         assertThat(rest.getForEntity("/api/v1/stream", String.class).getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         future.cancel(true);
+        client.shutdownNow();   // otherwise the open stream keeps the test JVM alive
     }
 }

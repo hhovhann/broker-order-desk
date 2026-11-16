@@ -20,3 +20,18 @@ export interface StatementLine { tradeId: number; executedAt: string; symbol: st
 export interface AuditLine { at: string; actor: string; action: string; detail: string; correlationId: string | null }
 export interface Rules { bandPercent: number; maintenanceMarginPercent: number; maxOrderValueMills: number }
 export interface QuoteResult { bid: OrderView; ask: OrderView }
+export interface Summary { session: 'OPEN' | 'CLOSED'; simulatedOpen: boolean; indexPoints: number; indexChangeBps: number; trades: number; shares: number; valueMills: number; advancers: number; decliners: number; unchanged: number; asOf: string }
+export interface Candle { date: string; open: number; high: number; low: number; close: number; volume: number }
+export interface Series { symbol: string; points: number[][] }
+export interface AnalyticsRow {
+  symbol: string; name: string; period: string; lastPriceMills: number; assetsMills: number; liabilitiesMills: number; equityMills: number; profitMills: number
+  profitOverEquityBps: number | null; epsMills: number | null; dividendYieldBps: number | null; bookValueMills: number | null; peX1000: number | null; pbX1000: number | null; upDaysYear: number
+}
+export interface NewsItem { id: number; kind: string; symbol: string | null; date: string; title: string; body: string }
+export interface Alert { id: number; symbol: string; direction: 'ABOVE' | 'BELOW'; priceMills: number; status: 'ACTIVE' | 'TRIGGERED'; createdAt: string; triggeredAt: string | null; triggeredPriceMills: number | null }
+export interface Transfer { id: number; clientRef: string; direction: 'DEPOSIT' | 'WITHDRAW'; amountMills: number; bank: string; rail: string; status: string; createdAt: string }
+export interface Wallet { cashMills: number; reservedMills: number; withdrawableMills: number; transfers: Transfer[] }
+export interface Bank { name: string; rail: string }
+export interface Member { owner: string; quotedSymbols: number; orders: number; filledShares: number; trades: number }
+export interface Print { time: string; priceMills: number; quantity: number; kind: 'LP_BUY' | 'LP_SELL' | 'MARKET_BUY' | 'MARKET_SELL' }
+export interface ApplicationRow { id: number; fullName: string; email: string; type: string; note: string | null; status: string; createdAt: string }

@@ -1,100 +1,142 @@
 WEBVTT
 
-00:00:00.654 --> 00:00:07.285
-This is Broker Order Desk: an order desk for a stock brokerage,
-with a React dashboard on a Spring Boot backend, written in Java
+00:00:00.661 --> 00:00:07.906
+This is Broker Order Desk: a complete brokerage platform, with a
+React dashboard on a Spring Boot backend, written in Java twenty
 
-00:00:07.285 --> 00:00:13.916
-twenty five. There are four roles: investor, liquidity provider,
-risk officer, and administrator. Every name, symbol and price is
+00:00:07.906 --> 00:00:15.151
+five. It covers trading, margin, charts, analytics, news,
+wallet, alerts, liquidity providers, and an administrator's
 
-00:00:13.916 --> 00:00:17.231
-synthetic.
+00:00:15.151 --> 00:00:18.774
+audit trail. Everything is synthetic.
 
-00:00:18.677 --> 00:00:26.080
-Investor two signs in and lands on the price board: best offer
-and bid from the live order book, last price, trades, average,
+00:00:20.233 --> 00:00:27.033
+The header is live. Market state, a synthetic index with its
+trend, breadth, and session totals. A server push stream updates
 
-00:00:26.080 --> 00:00:33.482
-volume, value, high, low, a trend line, and the change. Ten
-symbols carry synthetic opening trades.
+00:00:27.033 --> 00:00:33.834
+every screen the moment an order or a trade happens, with
+polling only as a safety net.
 
-00:00:34.086 --> 00:00:40.450
+00:00:34.438 --> 00:00:41.921
+The price board shows offer and bid from the real order book,
+last price, trades, average, volume, value, high, low, a trend
+
+00:00:41.921 --> 00:00:49.404
+line, and the change. Hover a symbol for its daily limits.
+Favorites, sorting, and an export to C S V.
+
+00:00:50.005 --> 00:00:57.267
 Investor two sells twenty thousand shares at twelve riyals and
-five hundred mills. Pre trade risk reserves those shares, so
+five hundred mills. Pre trade risk reserves those shares, and
 
-00:00:40.450 --> 00:00:46.813
-they cannot be sold twice, and the order rests in the book. The
-depth panel shows it.
+00:00:57.267 --> 00:01:00.898
+the order rests in the book. The depth panel shows it.
 
-00:00:49.144 --> 00:00:56.952
+00:01:03.226 --> 00:01:10.926
 Investor one buys the same size. The engine matches by price and
-time, and the trade settles in one database transaction. At the
+time, and the trade settles in one database transaction. The
 
-00:00:56.952 --> 00:01:04.760
-top, the balance turned negative: that is the margin loan. The
-margin check is healthy at forty percent.
+00:01:10.926 --> 00:01:18.627
+balance turned negative: that is the margin loan, and equity is
+forty percent, above the maintenance level.
 
-00:01:07.090 --> 00:01:12.829
-Now the price moves. Investor two offers five thousand shares at
-eleven riyals three hundred, still inside the ten percent daily
+00:01:20.941 --> 00:01:28.109
+The price moves. Investor two offers five thousand shares at
+eleven riyals three hundred, inside the daily band.
 
-00:01:12.829 --> 00:01:15.699
-band.
+00:01:33.318 --> 00:01:39.249
+Investor one buys a thousand. The position is marked to market,
+equity drops below maintenance, and the flag turns red: margin
 
-00:01:18.021 --> 00:01:24.118
-Investor one buys a thousand at that price. The last price
-drops, the position is marked to market, and equity falls below
-
-00:01:24.118 --> 00:01:30.216
-the maintenance level. The flag at the top turns red: margin
+00:01:39.249 --> 00:01:42.214
 call.
 
-00:01:30.818 --> 00:01:36.589
-The margin screen shows it on a gauge: the needle is inside the
-red zone, under the maintenance line.
+00:01:42.819 --> 00:01:47.019
+The margin screen shows it on a gauge, with the needle inside
+the red zone.
 
-00:01:38.920 --> 00:01:46.108
-A risk officer signs in. Only that role sees margin calls across
-accounts, and investor one is on the list.
+00:01:47.624 --> 00:01:54.782
+In the wallet, a withdrawal is refused: the margin loan has to
+be repaid first. A withdrawal can never reach into borrowed
 
-00:01:48.439 --> 00:01:56.395
-Back as investor one, three pre trade checks. The ticket warns
-before sending, and the server still decides. A price outside
+00:01:54.782 --> 00:02:01.939
+money. A deposit through a bank rail credits the account exactly
+once, even if the request is retried.
 
-00:01:56.395 --> 00:02:04.351
-the daily band is rejected. An order bigger than the buying
-power is rejected. Selling shares you do not own is rejected.
+00:02:02.544 --> 00:02:09.306
+Investor one sets a price alert. It fires once, when a trade
+prints through the target, and pops up on screen.
 
-00:02:06.669 --> 00:02:14.285
-Investor two cancels the order that is still resting. The engine
-removes it from the book and the reserved shares are released.
+00:02:09.907 --> 00:02:16.083
+Charts. Candlesticks with volume for any symbol or the index,
+with ranges from one month to all. Compare mode puts several
 
-00:02:16.587 --> 00:02:22.767
-The liquidity provider posts a two sided quote, a bid and an
-offer together. It goes through the same risk, matching and
+00:02:16.083 --> 00:02:22.259
+symbols on one axis, as percentage change since the start of the
+range.
 
-00:02:22.767 --> 00:02:25.857
-settlement path as any other order.
+00:02:22.864 --> 00:02:29.885
+Analytics. Statements and ratios per company: assets,
+liabilities, equity, profit, earnings per share, dividend yield,
 
-00:02:28.169 --> 00:02:34.070
-Finally the administrator reviews the audit trail: every
-accepted order, fill, rejection and cancel, with who did it and
+00:02:29.885 --> 00:02:36.907
+book value, price to earnings, and price to book. Computed live
+from the last price, and covered by unit tests, including losses
 
-00:02:34.070 --> 00:02:37.020
-a correlation id.
+00:02:36.907 --> 00:02:40.418
+and zero denominators.
 
-00:02:37.625 --> 00:02:44.139
-Twenty seven automated tests stand behind this, including a
-stress test with many concurrent orders that proves cash and
+00:02:41.022 --> 00:02:45.182
+News and disclosures, market wide or per company, next to the
+chart.
 
-00:02:44.139 --> 00:02:50.652
-shares are conserved, and a test where the database fails in the
-middle of settlement and the desk recovers. There is a
+00:02:45.786 --> 00:02:50.116
+The whole interface switches to Arabic with a right to left
+layout, in one click.
 
-00:02:50.652 --> 00:02:57.166
-Dockerfile, Kubernetes manifests, a CI pipeline, specs and a
-changelog for every feature, and the code is in the Git
+00:02:51.884 --> 00:02:59.364
+Back in English. Three pre trade checks. A price outside the
+daily band is rejected. An order bigger than the buying power is
 
-00:02:57.166 --> 00:03:00.423
-repository.
+00:02:59.364 --> 00:03:03.104
+rejected. Selling shares you do not own is rejected.
+
+00:03:05.402 --> 00:03:12.144
+Investor two cancels the resting order. The engine removes it
+from the book and releases the reserved shares.
+
+00:03:14.468 --> 00:03:22.084
+The liquidity provider posts a two sided quote through the same
+risk and matching path as any order. The activity chart shows
+
+00:03:22.084 --> 00:03:25.892
+liquidity provider trades apart from ordinary market trades.
+
+00:03:26.497 --> 00:03:33.934
+Services. The margin terms come straight from the live rules.
+The institutions tab says plainly what is built, and what is
+
+00:03:33.934 --> 00:03:37.653
+not: a FIX gateway and direct market access are not.
+
+00:03:39.969 --> 00:03:46.556
+The administrator reviews the audit trail, and the account
+applications that arrived from the public open account form.
+
+00:03:47.159 --> 00:03:53.834
+Forty four automated tests stand behind this, including a
+concurrency stress test proving cash and shares are conserved,
+
+00:03:53.834 --> 00:04:00.509
+and a failure test where the database drops in the middle of
+settlement. A benchmark compares garbage collectors for the
+
+00:04:00.509 --> 00:04:07.184
+matching path, and the container runs on the one that cut the
+long pauses tenfold. There is a Dockerfile, Kubernetes
+
+00:04:07.184 --> 00:04:13.860
+manifests, a CI pipeline, specs and a changelog, and the code is
+in the Git repository.

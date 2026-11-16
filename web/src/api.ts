@@ -2,6 +2,7 @@ let credentials: string | null = sessionStorage.getItem('cred')
 let onUnauthorized: () => void = () => {}
 
 export const setUnauthorizedHandler = (f: () => void) => { onUnauthorized = f }
+export const authHeader = (): Record<string, string> => (credentials ? { Authorization: `Basic ${credentials}` } : {})
 export const hasCredentials = () => credentials !== null
 export function signIn(user: string, pass: string) { credentials = btoa(`${user}:${pass}`); sessionStorage.setItem('cred', credentials) }
 export function signOut() { credentials = null; sessionStorage.removeItem('cred') }

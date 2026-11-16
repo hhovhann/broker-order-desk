@@ -32,6 +32,10 @@ public class StreamHub {
     @Scheduled(fixedRate = 15_000)
     void heartbeat() { broadcast("ping", "1"); }
 
+    /** Closing the streams lets the web server stop promptly instead of waiting for browsers to hang up. */
+    @org.springframework.context.event.EventListener(org.springframework.context.event.ContextClosedEvent.class)   // fires before the web server is asked to stop
+    void closeAll() { clients.forEach(c -> { try { c.emitter.complete(); } catch (RuntimeException ignored) { } }); clients.clear(); }
+
     private void send(Client c, String event, String data) {
         try { c.emitter.send(SseEmitter.event().name(event).data(data)); }
         catch (IOException | IllegalStateException gone) { clients.remove(c); }

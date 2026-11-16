@@ -24,19 +24,26 @@ CURSOR_JS = """(() => { const add = () => { if (document.getElementById('demo-cu
   document.addEventListener('DOMContentLoaded', add); add(); })();"""
 
 LINES = {
-    "intro": "This is Broker Order Desk: an order desk for a stock brokerage, with a React dashboard on a Spring Boot backend, written in Java twenty five. There are four roles: investor, liquidity provider, risk officer, and administrator. Every name, symbol and price is synthetic.",
-    "prices": "Investor two signs in and lands on the price board: best offer and bid from the live order book, last price, trades, average, volume, value, high, low, a trend line, and the change. Ten symbols carry synthetic opening trades.",
-    "sell": "Investor two sells twenty thousand shares at twelve riyals and five hundred mills. Pre trade risk reserves those shares, so they cannot be sold twice, and the order rests in the book. The depth panel shows it.",
-    "buy": "Investor one buys the same size. The engine matches by price and time, and the trade settles in one database transaction. At the top, the balance turned negative: that is the margin loan. The margin check is healthy at forty percent.",
-    "sell2": "Now the price moves. Investor two offers five thousand shares at eleven riyals three hundred, still inside the ten percent daily band.",
-    "buy2": "Investor one buys a thousand at that price. The last price drops, the position is marked to market, and equity falls below the maintenance level. The flag at the top turns red: margin call.",
-    "margin": "The margin screen shows it on a gauge: the needle is inside the red zone, under the maintenance line.",
-    "risk": "A risk officer signs in. Only that role sees margin calls across accounts, and investor one is on the list.",
-    "reject": "Back as investor one, three pre trade checks. The ticket warns before sending, and the server still decides. A price outside the daily band is rejected. An order bigger than the buying power is rejected. Selling shares you do not own is rejected.",
-    "cancel": "Investor two cancels the order that is still resting. The engine removes it from the book and the reserved shares are released.",
-    "quote": "The liquidity provider posts a two sided quote, a bid and an offer together. It goes through the same risk, matching and settlement path as any other order.",
-    "audit": "Finally the administrator reviews the audit trail: every accepted order, fill, rejection and cancel, with who did it and a correlation id.",
-    "outro": "Twenty seven automated tests stand behind this, including a stress test with many concurrent orders that proves cash and shares are conserved, and a test where the database fails in the middle of settlement and the desk recovers. There is a Dockerfile, Kubernetes manifests, a CI pipeline, specs and a changelog for every feature, and the code is in the Git repository.",
+    "intro": "This is Broker Order Desk: a complete brokerage platform, with a React dashboard on a Spring Boot backend, written in Java twenty five. It covers trading, margin, charts, analytics, news, wallet, alerts, liquidity providers, and an administrator's audit trail. Everything is synthetic.",
+    "header": "The header is live. Market state, a synthetic index with its trend, breadth, and session totals. A server push stream updates every screen the moment an order or a trade happens, with polling only as a safety net.",
+    "prices": "The price board shows offer and bid from the real order book, last price, trades, average, volume, value, high, low, a trend line, and the change. Hover a symbol for its daily limits. Favorites, sorting, and an export to C S V.",
+    "sell": "Investor two sells twenty thousand shares at twelve riyals and five hundred mills. Pre trade risk reserves those shares, and the order rests in the book. The depth panel shows it.",
+    "buy": "Investor one buys the same size. The engine matches by price and time, and the trade settles in one database transaction. The balance turned negative: that is the margin loan, and equity is forty percent, above the maintenance level.",
+    "sell2": "The price moves. Investor two offers five thousand shares at eleven riyals three hundred, inside the daily band.",
+    "buy2": "Investor one buys a thousand. The position is marked to market, equity drops below maintenance, and the flag turns red: margin call.",
+    "margin": "The margin screen shows it on a gauge, with the needle inside the red zone.",
+    "wallet": "In the wallet, a withdrawal is refused: the margin loan has to be repaid first. A withdrawal can never reach into borrowed money. A deposit through a bank rail credits the account exactly once, even if the request is retried.",
+    "alerts": "Investor one sets a price alert. It fires once, when a trade prints through the target, and pops up on screen.",
+    "charts": "Charts. Candlesticks with volume for any symbol or the index, with ranges from one month to all. Compare mode puts several symbols on one axis, as percentage change since the start of the range.",
+    "analytics": "Analytics. Statements and ratios per company: assets, liabilities, equity, profit, earnings per share, dividend yield, book value, price to earnings, and price to book. Computed live from the last price, and covered by unit tests, including losses and zero denominators.",
+    "news": "News and disclosures, market wide or per company, next to the chart.",
+    "arabic": "The whole interface switches to Arabic with a right to left layout, in one click.",
+    "reject": "Back in English. Three pre trade checks. A price outside the daily band is rejected. An order bigger than the buying power is rejected. Selling shares you do not own is rejected.",
+    "cancel": "Investor two cancels the resting order. The engine removes it from the book and releases the reserved shares.",
+    "quote": "The liquidity provider posts a two sided quote through the same risk and matching path as any order. The activity chart shows liquidity provider trades apart from ordinary market trades.",
+    "services": "Services. The margin terms come straight from the live rules. The institutions tab says plainly what is built, and what is not: a FIX gateway and direct market access are not.",
+    "audit": "The administrator reviews the audit trail, and the account applications that arrived from the public open account form.",
+    "outro": "Forty four automated tests stand behind this, including a concurrency stress test proving cash and shares are conserved, and a failure test where the database drops in the middle of settlement. A benchmark compares garbage collectors for the matching path, and the container runs on the one that cut the long pauses tenfold. There is a Dockerfile, Kubernetes manifests, a CI pipeline, specs and a changelog, and the code is in the Git repository.",
 }
 
 
@@ -105,13 +112,19 @@ def order(pg, side, qty, price):
     tap(pg, '[data-testid=submit-order]', 0.3)
 
 
+def nav(pg, page, pause=0.4):
+    tap(pg, f'[data-testid=nav-{page}]', pause)
+
+
 def story(pg, rec, clips):
     S = lambda c: say(rec, clips, c)
     pg.goto(BASE + "/"); pg.wait_for_selector('[data-testid=login-user]'); nap(0.6)
     e = S("intro"); until(rec, e)
 
     login_as(pg, "trader2")
-    e = S("prices"); pg.wait_for_selector('[data-testid=row-FNBK]'); expect(pg, '[data-testid=board]', 'Sample Bank'); until(rec, e)
+    e = S("header"); expect(pg, '[data-testid=index-box]', 'Index'); expect(pg, '[data-testid=market-state]', 'Market'); until(rec, e)
+    e = S("prices"); pg.wait_for_selector('[data-testid=row-FNBK]'); expect(pg, '[data-testid=board]', 'Sample Bank')
+    tap(pg, '[data-testid=star-FNBK]', 0.3); tap(pg, '[data-testid=fav-only]', 0.5); expect(pg, '[data-testid=board]', 'First National'); tap(pg, '[data-testid=fav-all]', 0.3); until(rec, e)
     e = S("sell"); open_symbol_in_trading(pg); order(pg, 'sell', 20000, '12.500')
     expect(pg, '.toasts', 'resting in the book'); expect(pg, '[data-testid=depth]', '20,000'); until(rec, e)
 
@@ -123,14 +136,25 @@ def story(pg, rec, clips):
     e = S("sell2"); open_symbol_in_trading(pg); order(pg, 'sell', 5000, '11.300'); expect(pg, '.toasts', 'resting in the book'); until(rec, e)
 
     login_as(pg, "trader1")
+    # an alert that the next trade will cross, set before the price moves
+    nav(pg, 'alerts'); pg.locator('[data-testid=alert-symbol]').select_option('SBNK'); tap(pg, '[data-testid=alert-below]', 0.2)
+    pg.locator('[data-testid=alert-price]').fill('11.400'); nap(0.3); tap(pg, '[data-testid=alert-submit]', 0.3); expect(pg, '[data-testid=alerts]', 'Active')
     e = S("buy2"); open_symbol_in_trading(pg); order(pg, 'buy', 1000, '11.300')
     expect(pg, '.toasts', 'filled at 11.300'); expect(pg, '[data-testid=margin-flag]', 'MARGIN CALL'); until(rec, e)
-    e = S("margin"); tap(pg, '[data-testid=nav-margin]', 0.4); expect(pg, '[data-testid=margin-call]', 'MARGIN CALL'); until(rec, e)
+    e = S("margin"); nav(pg, 'margin'); expect(pg, '[data-testid=margin-call]', 'MARGIN CALL'); until(rec, e)
 
-    login_as(pg, "risk1")
-    e = S("risk"); tap(pg, '[data-testid=nav-risk]', 0.4); expect(pg, '[data-testid=calls]', 'trader1'); until(rec, e)
+    e = S("wallet"); nav(pg, 'wallet')
+    tap(pg, '[data-testid=wallet-withdraw]', 0.3); pg.locator('[data-testid=wallet-amount]').fill('1000'); nap(0.3); tap(pg, '[data-testid=wallet-submit]', 0.3); expect(pg, '.toasts', 'margin loan')
+    tap(pg, '[data-testid=wallet-deposit]', 0.3); pg.locator('[data-testid=wallet-amount]').fill('50000'); nap(0.3); tap(pg, '[data-testid=wallet-submit]', 0.3); expect(pg, '[data-testid=transfers]', 'DEPOSIT'); until(rec, e)
+    e = S("alerts"); nav(pg, 'alerts'); expect(pg, '[data-testid=alerts]', 'Triggered'); until(rec, e)
 
-    login_as(pg, "trader1")
+    e = S("charts"); nav(pg, 'charts'); pg.wait_for_selector('svg.candles .cu'); tap(pg, '[data-testid=range-3M]', 0.6)
+    tap(pg, '[data-testid=mode-compare]', 0.4); tap(pg, '[data-testid=pick-SBNK]', 0.3); tap(pg, '[data-testid=pick-FNBK]', 0.5); expect(pg, '.legend', 'FNBK'); until(rec, e)
+    e = S("analytics"); nav(pg, 'analytics'); expect(pg, '[data-testid=ratios]', 'FNBK'); tap(pg, '[data-testid=an-statements]', 0.5); expect(pg, '[data-testid=statements]', 'FNBK'); until(rec, e)
+    e = S("news"); nav(pg, 'news'); expect(pg, '[data-testid=news-feed]', 'invented'); tap(pg, '[data-testid=news-SBNK]', 0.5); expect(pg, '[data-testid=disc-feed]', 'third quarter'); until(rec, e)
+    e = S("arabic"); nav(pg, 'prices'); tap(pg, '[data-testid=lang]', 0.8); expect(pg, '[data-testid=nav-prices]', 'الأسعار'); nap(1.5); until(rec, e)
+    tap(pg, '[data-testid=lang]', 0.6)
+
     e = S("reject"); open_symbol_in_trading(pg)
     order(pg, 'buy', 10, '20.000'); expect(pg, '.hints', 'outside the daily band'); expect(pg, '.toasts', 'daily band')
     nap(1.0); order(pg, 'buy', 30000, '12.500'); expect(pg, '.toasts', 'buying power')
@@ -141,17 +165,25 @@ def story(pg, rec, clips):
     pg.wait_for_selector('[data-testid^=cancel-]'); tap(pg, '[data-testid^=cancel-]', 0.3); expect(pg, '.toasts', 'cancelled'); until(rec, e)
 
     login_as(pg, "lp1")
-    e = S("quote"); tap(pg, '[data-testid=nav-liquidity]', 0.4)
+    e = S("quote"); nav(pg, 'liquidity')
+    pg.locator('[data-testid=q-symbol]').select_option('SBNK')
     for sel, val in (('[data-testid=q-qty]', '1000'), ('[data-testid=q-bid]', '12.400'), ('[data-testid=q-ask]', '12.600')):
         pg.locator(sel).fill(val); nap(0.3)
     tap(pg, '[data-testid=q-submit]', 0.3); expect(pg, '.toasts', 'Quoted SBNK')
-    tap(pg, '[data-testid=nav-trading]', 0.3); expect(pg, '[data-testid=depth]', '12.400'); expect(pg, '[data-testid=depth]', '12.600'); until(rec, e)
+    login_as(pg, "trader1"); nav(pg, 'trading'); order(pg, 'buy', 300, '12.600'); expect(pg, '.toasts', 'filled'); nav(pg, 'liquidity')
+    pg.wait_for_selector('[data-testid=scatter] circle'); expect(pg, '[data-testid=members]', 'lp1'); until(rec, e)
+
+    e = S("services"); nav(pg, 'services'); tap(pg, '[data-testid=svc-margin]', 0.4); expect(pg, '[data-testid=margin-terms]', 'Maintenance')
+    tap(pg, '[data-testid=svc-institutions]', 0.4); expect(pg, '[data-testid=institutions]', 'Not built')
+    tap(pg, '[data-testid=svc-account]', 0.4)
+    pg.locator('[data-testid=app-name]').fill('Demo Person'); pg.locator('[data-testid=app-email]').fill('demo.person@example.com'); nap(0.3)
+    tap(pg, '[data-testid=app-submit]', 0.3); expect(pg, '[data-testid=app-msg]', 'received'); until(rec, e)
 
     login_as(pg, "admin")
-    e = S("audit"); tap(pg, '[data-testid=nav-audit]', 0.4)
-    for word in ('FILL', 'ORDER_REJECTED', 'CANCEL', 'ORDER_ACCEPTED'):
+    e = S("audit"); nav(pg, 'audit')
+    for word in ('FILL', 'ORDER_REJECTED', 'CANCEL', 'ORDER_ACCEPTED', 'TRANSFER_DEPOSIT'):
         expect(pg, '[data-testid=audit]', word)
-    until(rec, e)
+    expect(pg, '[data-testid=applications]', 'Demo Person'); until(rec, e)
     e = S("outro"); until(rec, e, 1.2)
 
 
@@ -183,7 +215,7 @@ def finish(rec, clips, work, video):
                     "-map", "0:v", "-map", "1:a", "-map", "2:s", "-vf", f"scale={W * 3 // 2}:{H * 3 // 2}:flags=lanczos",
                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "22", "-preset", "slow", "-r", "25", "-c:a", "aac", "-b:a", "128k",
                     "-c:s", "mov_text", "-metadata:s:s:0", "language=eng", "-t", f"{total:.2f}", "-movflags", "+faststart", str(mp4)], check=True)
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "60", "-i", str(mp4), "-frames:v", "1", str(OUT / f"{NAME}.png")], check=True)
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-ss", "75", "-i", str(mp4), "-frames:v", "1", str(OUT / f"{NAME}.png")], check=True)
     print("video", mp4, round(total), "s")
 
 

@@ -1,9 +1,7 @@
-import type { AuditLine, Report, StatementLine, OrderView, QuoteResult, BoardRow } from '../types'
-import { money, pct, px, qty, timeOf, reason } from '../format'
+import type { AuditLine, Report, StatementLine } from '../types'
+import { money, pct, px, qty, timeOf } from '../format'
 import { Gauge } from './Gauge'
 import { useState } from 'react'
-import { call } from '../api'
-import { millsFromInput } from '../format'
 
 export function Portfolio({ account }: { account: Report | null }) {
   if (!account) return <div className="card empty">Loading…</div>
@@ -54,34 +52,6 @@ export function Statement({ lines }: { lines: StatementLine[] | null }) {
         <tbody>{(lines ?? []).map(l => <tr key={l.tradeId}><td>{timeOf(l.executedAt)}</td><td><b>{l.symbol}</b></td><td className={l.side === 'BUY' ? 'up' : 'down'}>{l.side}</td><td className="r num">{qty(l.quantity)}</td><td className="r num">{px(l.priceMills)}</td><td className="r num">{money(l.valueMills)}</td></tr>)}
           {!lines?.length && <tr><td colSpan={6} className="empty">No executions yet</td></tr>}</tbody></table>
     </section>
-  )
-}
-
-export function Liquidity({ rows, selected, toast }: { rows: BoardRow[]; selected: string; toast: (k: 'ok' | 'bad' | 'info', t: string) => void }) {
-  const row = rows.find(r => r.symbol === selected) ?? rows[0]
-  const [bid, setBid] = useState(''), [ask, setAsk] = useState(''), [quantity, setQuantity] = useState('1000'), [last, setLast] = useState<QuoteResult | null>(null)
-  const mid = row ? row.lastPriceMills : 0
-  const b = millsFromInput(bid || '0'), a = millsFromInput(ask || '0')
-  const spreadBps = a > 0 && b > 0 ? Math.round(((a - b) * 10000) / ((a + b) / 2)) : 0
-  const send = async () => {
-    const r = await call<QuoteResult>('POST', '/api/v1/quotes', { quoteId: `q${Date.now()}`, symbol: row.symbol, quantity: parseInt(quantity, 10), bidPriceMills: b, askPriceMills: a })
-    if (r.status === 200) { setLast(r.data); toast('ok', `Quoted ${row.symbol}: bid ${px(b)} / offer ${px(a)}`) } else toast('bad', 'Quote rejected: the bid must be below the offer and inside the daily band')
-  }
-  if (!row) return null
-  return (
-    <div className="grid2">
-      <section className="card form" data-testid="quote-form"><h2>Two-sided quote <span className="muted">{row.symbol}</span></h2>
-        <div className="muted small">Last {px(mid)}. A quote places a bid and an offer together through the same risk, matching and settlement path as any order.</div>
-        <label>Shares per side<input data-testid="q-qty" value={quantity} onChange={e => setQuantity(e.target.value.replace(/\D/g, ''))} /></label>
-        <label>Bid (QAR)<input data-testid="q-bid" value={bid} placeholder={px(mid - 100)} onChange={e => setBid(e.target.value)} /></label>
-        <label>Offer (QAR)<input data-testid="q-ask" value={ask} placeholder={px(mid + 100)} onChange={e => setAsk(e.target.value)} /></label>
-        <div className="est"><span className="muted">Quoted spread</span><b>{spreadBps ? `${spreadBps} bps` : '-'}</b></div>
-        <button className="primary" data-testid="q-submit" disabled={!b || !a || a <= b} onClick={() => void send()}>Post quote</button>
-      </section>
-      <section className="card"><h2>Last quote</h2>
-        {last ? <table><tbody>{([['Bid', last.bid], ['Offer', last.ask]] as [string, OrderView][]).map(([n, o]) => <tr key={n}><td>{n}</td><td className="r num">{qty(o.quantity)} @ {px(o.limitPriceMills)}</td><td><span className={`pill ${o.status}`}>{o.status}</span> {reason(o.rejectReason)}</td></tr>)}</tbody></table> : <div className="empty">No quote posted in this session</div>}
-      </section>
-    </div>
   )
 }
 
